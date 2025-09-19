@@ -1,113 +1,157 @@
 package edu.eci.arsw.math;
 
-///  <summary>
-///  An implementation of the Bailey-Borwein-Plouffe formula for calculating hexadecimal
-///  digits of pi.
-///  https://en.wikipedia.org/wiki/Bailey%E2%80%93Borwein%E2%80%93Plouffe_formula
-///  *** Translated from C# code: https://github.com/mmoroney/DigitsOfPi ***
-///  </summary>
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+/**
+ * An implementation of the Bailey-Borwein-Plouffe formula for calculating
+ * hexadecimal digits of pi.
+ * https://en.wikipedia.org/wiki/Bailey%E2%80%93Borwein%E2%80%93Plouffe_formula
+ * *** Translated from C# code: https://github.com/mmoroney/DigitsOfPi ***
+ */
 public class PiDigits {
 
-    private static int DigitsPerSum = 8;
-    private static double Epsilon = 1e-17;
+    private static Scanner sc = new Scanner(System.in);
 
-    
     /**
-     * Returns a range of hexadecimal digits of pi.
-     * @param start The starting location of the range.
-     * @param count The number of digits to return
-     * @return An array containing the hexadecimal digits.
+     * Calcula los digitos de pi en un intervalo dado
+     * @param start Inicio del intervalo
+     * @param count Cantidad de digitos
+     * @param N Cantidad de threads
+     * @return Arreglo de bytes con los digitos de pi
      */
-    public static byte[] getDigits(int start, int count) {
-        if (start < 0) {
-            throw new RuntimeException("Invalid Interval");
-        }
+    public static byte[] getDigits(int start, int count, int N) {
 
-        if (count < 0) {
-            throw new RuntimeException("Invalid Interval");
-        }
-
+        List<PiDigitsThread> threads = new ArrayList<>();
+        Object lockObject = new Object();
         byte[] digits = new byte[count];
-        double sum = 0;
+        int digitsPerThread = count / N;
+        boolean anyThreadRunning = true;
 
-        for (int i = 0; i < count; i++) {
-            if (i % DigitsPerSum == 0) {
-                sum = 4 * sum(1, start)
-                        - 2 * sum(4, start)
-                        - sum(5, start)
-                        - sum(6, start);
+        // Valida el intervalo
+        isValidInterval(start, count);
 
-                start += DigitsPerSum;
+        // Crea los threads
+        createThreads(start, N, threads, digitsPerThread, lockObject);
+
+        // Revisa si algun thread esta corriendo y detiene la ejecucion
+        try {
+            while (anyThreadRunning) {
+                anyThreadRunning = false;
+                for (PiDigitsThread thread : threads) {
+                    if (thread.isAlive()) {
+                        anyThreadRunning = true;
+                        break;
+                    }
+                }
+                Thread.sleep(5000);
+                stopAndExecute(threads, lockObject);
             }
-
-            sum = 16 * (sum - Math.floor(sum));
-            digits[i] = (byte) sum;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
+        // Obtiene los resultados
+        getResults(threads, digits, digitsPerThread);
+        getTotalDigits(threads);
         return digits;
     }
 
-    /// <summary>
-    /// Returns the sum of 16^(n - k)/(8 * k + m) from 0 to k.
-    /// </summary>
-    /// <param name="m"></param>
-    /// <param name="n"></param>
-    /// <returns></returns>
-    private static double sum(int m, int n) {
-        double sum = 0;
-        int d = m;
-        int power = n;
-
-        while (true) {
-            double term;
-
-            if (power > 0) {
-                term = (double) hexExponentModulo(power, d) / d;
-            } else {
-                term = Math.pow(16, power) / d;
-                if (term < Epsilon) {
-                    break;
-                }
-            }
-
-            sum += term;
-            power--;
-            d += 8;
+    /**
+     * Detiene y ejecuta los threads
+     * @param threads Lista de threads
+     * @param lockObject Objeto de sincronizacion
+     * @throws InterruptedException
+     * @author Daniel Santanilla
+     *
+     */
+    private static void stopAndExecute(List<PiDigitsThread> threads, Object lockObject) throws InterruptedException {
+        for (PiDigitsThread thread : threads) {
+            thread.setExecution(false);
         }
-
-        return sum;
+        System.out.println("==================== Stopping threads... ====================");
+        getTotalDigits(threads);
+        System.out.println("Press ENTER to continue...");
+        sc.nextLine();
+        System.out.println("==================== Resuming threads... ====================");
+        for (PiDigitsThread thread : threads) {
+            thread.setExecution(true);
+            synchronized (lockObject) {
+                lockObject.notifyAll();
+            }
+        }
     }
 
-    /// <summary>
-    /// Return 16^p mod m.
-    /// </summary>
-    /// <param name="p"></param>
-    /// <param name="m"></param>
-    /// <returns></returns>
-    private static int hexExponentModulo(int p, int m) {
-        int power = 1;
-        while (power * 2 <= p) {
-            power *= 2;
+    /**
+     * Imprime el total de digitos procesados
+     * @param threads Lista de threads
+     */
+    private static void getTotalDigits(List<PiDigitsThread> threads) {
+        int totalDigits = 0;
+        for (PiDigitsThread thread : threads) {
+            totalDigits += thread.getProcessedDigits();
         }
+        System.out.println("Total of processed digits: " + totalDigits);
+    }
 
-        int result = 1;
-
-        while (power > 0) {
-            if (p >= power) {
-                result *= 16;
-                result %= m;
-                p -= power;
-            }
-
-            power /= 2;
-
-            if (power > 0) {
-                result *= result;
-                result %= m;
+    /**
+     * Obtiene los resultados de los threads
+     * @param threads Lista de threads
+     * @param digits Arreglo de bytes
+     * @param digitsPerThread Cantidad de digitos por thread
+     */
+    private static void getResults(List<PiDigitsThread> threads, byte[] digits, int digitsPerThread) {
+        for (PiDigitsThread thread : threads) {
+            try {
+                thread.join();
+                getThreadDigits(digits, digitsPerThread, thread);
+            } catch (InterruptedException ex) {
+                System.out.println("Thread interrupted");
             }
         }
+    }
 
-        return result;
+    /**
+     * Crea los threads
+     * @param start Inicio del intervalo
+     * @param N Cantidad de threads
+     * @param threads Lista de threads
+     * @param digitsPerThread Cantidad de digitos por thread
+     * @param lockObject Objeto de sincronizacion
+     */
+    private static void createThreads(int start, int N, List<PiDigitsThread> threads, int digitsPerThread, Object lockObject) {
+        for (int i = 0; i < N; i++) {
+            PiDigitsThread thread = new PiDigitsThread(start, digitsPerThread, i, lockObject);
+            start += digitsPerThread; // Actualiza el inicio del intervalo
+            threads.add(thread);
+            thread.start();
+        }
+    }
+
+    /**
+     * Obtiene los digitos de un thread
+     * @param digits Arreglo de bytes
+     * @param digitsPerThread Cantidad de digitos por thread
+     * @param thread Thread
+     */
+    private static void getThreadDigits(byte[] digits, int digitsPerThread, PiDigitsThread thread) {
+        byte[] threadDigits = thread.getDigits();
+        for (int i = 0; i < threadDigits.length; i++) {
+            // Actualiza los digitos en el arreglo por los digitos del thread
+            digits[i + thread.getThreadId() * digitsPerThread] = threadDigits[i];
+        }
+    }
+
+    /**
+     * Valida el intervalo
+     * @param start Inicio del intervalo
+     * @param count Cantidad de digitos
+     */
+    private static void isValidInterval(int start, int count) {
+        if (start < 0 || count < 0) {
+            throw new RuntimeException("Invalid Interval");
+        }
     }
 
 }
