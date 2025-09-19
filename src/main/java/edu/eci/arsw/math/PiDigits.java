@@ -63,7 +63,7 @@ public class PiDigits {
      * @param threads Lista de threads
      * @param lockObject Objeto de sincronizacion
      * @throws InterruptedException
-     * @author Daniel Santanilla
+     * @author Sebastian julian Villarraga Guerrrero
      *
      */
     private static void stopAndExecute(List<PiDigitsThread> threads, Object lockObject) throws InterruptedException {
@@ -154,4 +154,6 @@ public class PiDigits {
         }
     }
 
+    public static byte[] getDigits(int i, int i1) {
+    }
 }
