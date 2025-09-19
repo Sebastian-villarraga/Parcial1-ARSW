@@ -15,11 +15,11 @@ public class PiDigits {
     private static Scanner sc = new Scanner(System.in);
 
     /**
-     * Calcula los digitos de pi en un intervalo dado
-     * @param start Inicio del intervalo
-     * @param count Cantidad de digitos
-     * @param N Cantidad de threads
-     * @return Arreglo de bytes con los digitos de pi
+     * calcula los digitos de pi en un intervalo dado
+     * @param start inicio del intervalo
+     * @param count cantidad de digitos
+     * @param N cantidad de threads
+     * @return arreglo de bytes con los digitos de pi
      */
     public static byte[] getDigits(int start, int count, int N) {
 
@@ -29,39 +29,18 @@ public class PiDigits {
         int digitsPerThread = count / N;
         boolean anyThreadRunning = true;
 
-        // Valida el intervalo
         isValidInterval(start, count);
-
-        // Crea los threads
         createThreads(start, N, threads, digitsPerThread, lockObject);
 
-        // Revisa si algun thread esta corriendo y detiene la ejecucion
-        try {
-            while (anyThreadRunning) {
-                anyThreadRunning = false;
-                for (PiDigitsThread thread : threads) {
-                    if (thread.isAlive()) {
-                        anyThreadRunning = true;
-                        break;
-                    }
-                }
-                Thread.sleep(5000);
-                stopAndExecute(threads, lockObject);
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        // Obtiene los resultados
         getResults(threads, digits, digitsPerThread);
         getTotalDigits(threads);
         return digits;
     }
 
     /**
-     * Detiene y ejecuta los threads
-     * @param threads Lista de threads
-     * @param lockObject Objeto de sincronizacion
+     * detiene y ejecuta los threads
+     * @param threads lista de threads
+     * @param lockObject objeto de sincronizacion
      * @throws InterruptedException
      * @author Sebastian julian Villarraga Guerrrero
      *
@@ -84,7 +63,7 @@ public class PiDigits {
     }
 
     /**
-     * Imprime el total de digitos procesados
+     * imprime el total de digitos procesados
      * @param threads Lista de threads
      */
     private static void getTotalDigits(List<PiDigitsThread> threads) {
@@ -96,10 +75,10 @@ public class PiDigits {
     }
 
     /**
-     * Obtiene los resultados de los threads
-     * @param threads Lista de threads
-     * @param digits Arreglo de bytes
-     * @param digitsPerThread Cantidad de digitos por thread
+     * ubtiene los resultados de los threads
+     * @param threads lista de threads
+     * @param digits arreglo de bytes
+     * @param digitsPerThread cantidad de digitos por thread
      */
     private static void getResults(List<PiDigitsThread> threads, byte[] digits, int digitsPerThread) {
         for (PiDigitsThread thread : threads) {
@@ -113,40 +92,39 @@ public class PiDigits {
     }
 
     /**
-     * Crea los threads
-     * @param start Inicio del intervalo
-     * @param N Cantidad de threads
-     * @param threads Lista de threads
-     * @param digitsPerThread Cantidad de digitos por thread
-     * @param lockObject Objeto de sincronizacion
+     * crea los threads
+     * @param start inicio del intervalo
+     * @param N cantidad de threads
+     * @param threads lista de threads
+     * @param digitsPerThread cantidad de digitos por thread
+     * @param lockObject objeto de sincronizacion
      */
     private static void createThreads(int start, int N, List<PiDigitsThread> threads, int digitsPerThread, Object lockObject) {
         for (int i = 0; i < N; i++) {
             PiDigitsThread thread = new PiDigitsThread(start, digitsPerThread, i, lockObject);
-            start += digitsPerThread; // Actualiza el inicio del intervalo
+            start += digitsPerThread;
             threads.add(thread);
             thread.start();
         }
     }
 
     /**
-     * Obtiene los digitos de un thread
-     * @param digits Arreglo de bytes
-     * @param digitsPerThread Cantidad de digitos por thread
-     * @param thread Thread
+     * obtiene los digitos de un thread
+     * @param digits arreglo de bytes
+     * @param digitsPerThread cantidad de digitos por thread
+     * @param thread thread
      */
     private static void getThreadDigits(byte[] digits, int digitsPerThread, PiDigitsThread thread) {
         byte[] threadDigits = thread.getDigits();
         for (int i = 0; i < threadDigits.length; i++) {
-            // Actualiza los digitos en el arreglo por los digitos del thread
             digits[i + thread.getThreadId() * digitsPerThread] = threadDigits[i];
         }
     }
 
     /**
-     * Valida el intervalo
-     * @param start Inicio del intervalo
-     * @param count Cantidad de digitos
+     * valida el intervalo
+     * @param start inicio del intervalo
+     * @param count cantidad de digitos
      */
     private static void isValidInterval(int start, int count) {
         if (start < 0 || count < 0) {
@@ -154,6 +132,5 @@ public class PiDigits {
         }
     }
 
-    public static byte[] getDigits(int i, int i1) {
-    }
+
 }

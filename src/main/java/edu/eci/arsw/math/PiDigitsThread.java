@@ -1,7 +1,7 @@
 package edu.eci.arsw.math;
 
 /**
- * Thread que calcula los digitos de pi en un intervalo dado
+ * thread que calcula los digitos de pi en un intervalo dado
  * @author Sebastian Julian Villarraga Guerrero
  */
 public class PiDigitsThread extends Thread {
@@ -41,7 +41,6 @@ public class PiDigitsThread extends Thread {
                     }
                 }
             }
-            // Calcula los digitos
             if (i % DIGITSPERSUM == 0) {
                 sum = 4 * sum(1, start) - 2 * sum(4, start) - sum(5, start) - sum(6, start);
                 start += DIGITSPERSUM;
@@ -52,43 +51,32 @@ public class PiDigitsThread extends Thread {
     }
 
     /**
-     * Retorna los digitos calculados
-     * @return Arreglo de bytes con los digitos calculados
+     * retorna los digitos calculados
+     * @return arreglo de bytes con los digitos calculados
      */
     public byte[] getDigits() {
         return digits;
     }
 
     /**
-     * Retorna la cantidad de digitos procesados
-     * @return Cantidad de digitos procesados
+     * retorna la cantidad de digitos procesados
+     * @return cantidad de digitos procesados
      */
     public int getProcessedDigits() {
         return processedDigits;
     }
 
-    /**
-     * Retorna el id del thread
-     * @return Id del thread
-     */
+
     public int getThreadId() {
         return this.threadId;
     }
 
-    /**
-     * Estado de ejecucion del thread
-     * @param execution Estado de ejecucion
-     */
+
     public void setExecution(boolean execution) {
         this.execution = execution;
     }
 
-    /**
-     * Returns the sum of 16^(n - k)/(8 * k + m) from 0 to k.
-     * @param m
-     * @param n
-     * @return
-     */
+
     private double sum(int m, int n) {
         double sum = 0;
         int d = m;
@@ -111,8 +99,7 @@ public class PiDigitsThread extends Thread {
     }
 
     /**
-     * Return 16^p mod m.
-     *
+     * return 16^p mod m.
      * @param p
      * @param m
      * @return
